@@ -1,0 +1,24 @@
+<script>
+const url = 'https://stream.wikimedia.org/v2/stream/recentchange';
+const eventSource = new EventSource(url);
+
+eventSource.onopen = () => {
+    console.info('Opened connection.');
+};
+eventSource.onerror = (event) => {
+    console.error('Encountered error', event);
+};
+eventSource.onmessage = (event) => {
+    // event.data will be a JSON message
+    const data = JSON.parse(event.data);
+    // discard all canary events
+    if (data.meta.domain === 'canary') {
+        return;
+    }
+    // Edits from English Wikipedia
+    if (data.server_name === 'en.wikipedia.org') {
+        // Output the title of the edited page
+        console.log(data.title);
+    }
+};
+</script>

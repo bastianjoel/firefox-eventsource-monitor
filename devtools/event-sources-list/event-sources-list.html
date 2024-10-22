@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="event-sources-list.css">
+  </head>
+  <body>
+    <div class="main-container">
+      <div class="list">
+        <table>
+          <thead>
+            <tr>
+              <th>Status</th>
+              <th>Method</th>
+              <th>Host</th>
+              <th>File</th>
+              <th>Transmitted</th>
+            </tr>
+          </thead>
+          <tbody id="request-list">
+          </tbody>
+        </table>
+      </div>
+      <div id="detail" style="display: none">
+        <table>
+          <thead>
+            <tr>
+              <th>Id</th>
+              <th>Data</th>
+              <th>Name</th>
+              <th width="75">Size</th>
+              <th width="100">Time</th>
+              <th width="75">Retry</th>
+            </tr>
+          </thead>
+          <tbody id="data-list">
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <script src="event-sources-list.js"></script>
+  </body>
+</html>

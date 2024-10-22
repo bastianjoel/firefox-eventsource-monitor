@@ -1,0 +1,16 @@
+{
+  "description": "Add debug capabilities for event sources to devtools",
+  "manifest_version": 2,
+  "name": "eventsource-monitor",
+  "version": "1.0",
+  "author": "Bastian Rihm",
+
+  "permissions": ["webRequest", "webRequestBlocking", "<all_urls>"],
+
+  "background": {
+    "scripts": ["background.js"]
+  },
+
+  "devtools_page": "devtools/devtools-page.html"
+}
+
