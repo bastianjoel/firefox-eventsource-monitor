@@ -1,9 +1,8 @@
 const tabPortMap = new Map();
 
-function logURL(resp) {
+function handleHeadersReceived(resp) {
   if (tabPortMap.has(resp.tabId)) {
     const contentType = resp.responseHeaders.find(h => h.name.toLowerCase() === `content-type`);
-    console.log(contentType);
     if (contentType?.value?.startsWith(`text/event-stream`)) {
       const port = tabPortMap.get(resp.tabId)
 
@@ -33,8 +32,7 @@ function logURL(resp) {
         filter.write(encoder.encode(str));
       };
 
-      filter.onstop = (event) => {
-        console.log(event);
+      filter.onstop = () => {
         port.postMessage({
           type: `close`,
           data: {
@@ -51,7 +49,7 @@ function logURL(resp) {
   }
 }
 
-browser.webRequest.onHeadersReceived.addListener(logURL, {
+browser.webRequest.onHeadersReceived.addListener(handleHeadersReceived, {
   urls: ["<all_urls>"],
 }, ["responseHeaders", "blocking"]);
 

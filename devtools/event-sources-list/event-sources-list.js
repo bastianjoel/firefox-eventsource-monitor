@@ -1,15 +1,52 @@
-const requests = new Map();
-let activeRequest = null;
+var dataTable = new Tabulator("#data-table", {
+  height: `${document.body.offsetHeight - 2}px`,
+  layout:"fitColumns",
+  columns: [
+    { title: `Id`, field: `id`, widthGrow: 3 },
+    { title: `Data`, field: `data`, widthGrow: 3 },
+    { title: `Event`, field: `event`, widthGrow: 1 },
+    { title: `Size`, field: `size`, width: 75 },
+    { title: `Time`, field: `time`, width: 100 },
+    { title: `Retry`, field: `retry`, width: 75 },
+  ]
+});
 
-function logURL(requestDetails) {
-  if (requestDetails.tabId === devtools.inspectedWindow.tabId) {
-    console.log(requestDetails);
-    console.log(`Loading: ${requestDetails.url}`);
-    const el = document.createElement(`div`);
-    el.innerText = `${requestDetails.url} - ${JSON.stringify(requestDetails)}`;
-    document.getElementById(`list`).appendChild(el);
+var requestTable = new Tabulator("#request-table", {
+  selectableRows: 1,
+  layout:"fitColumns",
+  height: `${document.body.offsetHeight - 2}px`,
+  columns: [
+    { title: `Status`, field: `status` },
+    { title: `Method`, field: `method` },
+    { title: `Host`, field: `host` },
+    { title: `File`, field: `file` },
+    { title: `Transmitted`, field: `transmitted` },
+  ]
+});
+
+requestTable.on("rowSelected", function(row) {
+  setActive(row.getData().id)
+});
+
+requestTable.on("rowDeselected", function() {
+  activeRequest = null;
+  document.getElementById(`detail`).style.display = `none`;
+});
+
+function updateHeight() {
+  const docHeight = document.body.offsetHeight - 2;
+  if (requestTable) {
+    requestTable.setHeight(docHeight);
+  }
+
+  if (dataTable) {
+    dataTable.setHeight(docHeight);
   }
 }
+window.addEventListener('resize', updateHeight);
+
+const requests = new Map();
+let activeRequest = null;
 
 const port = browser.runtime.connect({ name: `listen-event-sources` });
 port.postMessage({
@@ -28,46 +65,38 @@ document.addEventListener(`unload`, () => {
   });
 });
 
-function getTdElement(content, className = null) {
-  const div = document.createElement(`div`);
-  div.innerText = content;
-
-  const td = document.createElement(`td`);
-  if (className) {
-    td.classList.add(className);
-  }
-  td.appendChild(div);
-  return td;
-}
-
 function addRequestToList(s) {
   const url = new URL(s.url);
-  const row = document.createElement(`tr`);
-  row.appendChild(getTdElement(s.statusCode, `status`));
-  row.appendChild(getTdElement(s.method));
-  row.appendChild(getTdElement(url.host));
-  row.appendChild(getTdElement(url.pathname));
-  row.appendChild(getTdElement(`0 B`, `transmitted`));
-  row.addEventListener(`click`, () => setActive(s.requestId));
-  document.getElementById(`request-list`).prepend(row);
+  requestTable.addData([{
+    id: s.requestId,
+    status: s.statusCode,
+    method: s.method,
+    host: url.host,
+    file: url.pathname,
+    transmitted: `0 B`
+  }], true)
 
   requests.set(s.requestId, {
-    element: row,
+    data: s,
     transmitted: 0,
     events: []
   });
 }
 
-function addMessageToList(m) {
-  const row = document.createElement(`tr`);
-  console.log(m);
-  row.appendChild(getTdElement(m.eventData.id || ``));
-  row.appendChild(getTdElement(m.eventData.data || ``));
-  row.appendChild(getTdElement(m.eventData.event || ``));
-  row.appendChild(getTdElement(formatBytes(m.size)));
-  row.appendChild(getTdElement(m.time));
-  row.appendChild(getTdElement(``));
-  document.getElementById(`data-list`).prepend(row);
+function addMessageToList(...messages) {
+  const data = [];
+  for (const m of messages) {
+    data.push({
+      id: m.eventData.id || ``,
+      data: m.eventData.data || ``,
+      event: m.eventData.event || ``,
+      size: formatBytes(m.size),
+      time: m.time,
+      retry: ``,
+    })
+  }
+
+  dataTable.addData(data, true)
 }
 
 function formatBytes(bytes) {
@@ -82,19 +111,16 @@ function formatBytes(bytes) {
 }
 
 function setActive(reqId) {
-  if (activeRequest) {
-    requests.get(activeRequest).element.classList.remove(`active`);
-  }
   activeRequest = reqId;
   const request = requests.get(activeRequest);
-  request.element.classList.add(`active`);
 
   document.getElementById(`detail`).style.display = `block`;
-  const listEl = document.getElementById(`data-list`);
-  listEl.innerHTML = ``;
-  for (let ev of request.events.slice(-1000).reverse()) {
-    addMessageToList(ev);
+  dataTable.clearData();
+  const events = [];
+  for (let i = request.events.length - 1; i >= 0; i--) {
+    events.push(request.events[i]);
   }
+  addMessageToList(...events);
 }
 
 function parseEvent(ev) {
@@ -123,27 +149,24 @@ port.onMessage.addListener((m) => {
       for (let ev of m.data.events) {
         request.transmitted += ev.length + 4;
       }
-      request.element.querySelector(`.transmitted`).innerText = formatBytes(request.transmitted);
+      requestTable.updateData([{ id: m.data.requestId, transmitted: formatBytes(request.transmitted) }])
     }
 
+    const newEvents = [];
+    for (let ev of m.data.events) {
+      const eventData = parseEvent(ev);
+      newEvents.push({
+        time: (new Date()).toLocaleTimeString(),
+        eventData,
+        size: ev.length
+      });
+    }
+    request.events.push(...newEvents);
     if (activeRequest === m.data.requestId) {
-      for (let ev of m.data.events) {
-        const eventData = parseEvent(ev);
-        request.events.push({
-          time: (new Date()).toLocaleTimeString(),
-          eventData,
-          size: ev.length
-        });
-        addMessageToList({
-          time: (new Date()).toLocaleTimeString(),
-          eventData,
-          size: ev.length
-        });
-      }
+      addMessageToList(...newEvents.reverse());
     }
   } else if (m.type === `close`) {
-    const statusEl = requests.get(m.data.requestId)?.element.querySelector(`.status`);
-    statusEl.innerText = `${statusEl.innerText} (closed)`
+    const status = requests.get(m.data.requestId).data.statusCode;
+    requestTable.updateData([{ id: m.data.requestId, status: `${status} (closed)` }])
   }
-  // console.log(m);
 });

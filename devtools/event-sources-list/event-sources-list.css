@@ -1,3 +1,7 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
 }
@@ -7,7 +11,7 @@ body {
   color: #FFF;
   font-family: sans-serif;
   display: flex;
-  width: 100%;
+  width: 100vw;
   height: 100vh;
 }
 
@@ -16,40 +20,27 @@ body {
   overflow-y: scroll;
 }
 
-.list {
+#data-table {
+  width: 100%;
+}
+
+.pane {
+  color: #fff;
+  min-width: 200px;
   flex-grow: 1;
 }
 
-table {
-  width: 100%;
-  table-layout: fixed;
+.right {
+  position: relative;
+  padding-left: 4px;
 }
 
-table th {
-  text-align: left;
-}
-
-table td {
-  overflow: auto;
-}
-
-table td div {
-  overflow: scroll;
-  white-space: nowrap;
-}
-
-#request-list tr {
-  cursor: pointer;
-}
-
-#request-list tr:hover {
-  background: rgba(255, 255, 255, 0.3);
-}
-
-#request-list tr.active {
-  background: blue;
-}
-
-#detail {
-  border-left: 2px solid #FFF;
+.gutter {
+  width: 4px;
+  height: 100%;
+  background: #666;
+  position: absolute;
+  top: 0;
+  left: 0;
+  cursor: col-resize;
 }
