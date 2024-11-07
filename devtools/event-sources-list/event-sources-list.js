@@ -1,5 +1,5 @@
 var dataTable = new Tabulator("#data-table", {
-  height: `${document.body.offsetHeight - 2}px`,
+  height: `${document.body.offsetHeight - 24}px`,
   layout:"fitColumns",
   columns: [
     { title: `Id`, field: `id`, widthGrow: 3 },
@@ -14,7 +14,7 @@ var dataTable = new Tabulator("#data-table", {
 var requestTable = new Tabulator("#request-table", {
   selectableRows: 1,
   layout:"fitColumns",
-  height: `${document.body.offsetHeight - 2}px`,
+  height: `${document.body.offsetHeight}px`,
   columns: [
     { title: `Status`, field: `status` },
     { title: `Method`, field: `method` },
@@ -99,22 +99,12 @@ function addMessageToList(...messages) {
   dataTable.addData(data, true)
 }
 
-function formatBytes(bytes) {
-    if (!+bytes) return '0 B'
-
-    const k = 1024
-    const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
-
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-
-    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`
-}
-
 function setActive(reqId) {
   activeRequest = reqId;
   const request = requests.get(activeRequest);
 
   document.getElementById(`detail`).style.display = `block`;
+  updateInfoTab(request);
   dataTable.clearData();
   const events = [];
   for (let i = request.events.length - 1; i >= 0; i--) {
@@ -123,26 +113,22 @@ function setActive(reqId) {
   addMessageToList(...events);
 }
 
-function parseEvent(ev) {
-  const data = {};
-  const lines = ev.split(`\n`);
-  for (const line of lines) {
-    parts = line.split(/:(.*)/s);
-    const key = parts[0].trim();
-    if (data[key]) {
-      data[key] += `\n`;
-    } else {
-      data[key] = ``;
-    }
-    data[key] += parts[1]?.trim();
-  }
-  
-  return data;
+function updateInfoTab(request) {
+  const data = request.data;
+  setTableData(`headers-info`, [
+    [`URL`, data.url],
+    [`IP`, data.ip],
+    [`Method`, data.method],
+    [`Status`, data.statusLine],
+    [`Requested at`, (new Date(data.timeStamp)).toLocaleString()],
+  ]);
+  setTableData(`headers-response`, data.responseHeaders?.map(h => [h.name, h.value]));
 }
 
 port.onMessage.addListener((m) => {
   if (m.type === `open`) {
     addRequestToList(m.data);
+    console.log(m);
   } else if (m.type === `data`) {
     const request = requests.get(m.data.requestId);
     if (request) {
@@ -154,7 +140,7 @@ port.onMessage.addListener((m) => {
 
     const newEvents = [];
     for (let ev of m.data.events) {
-      const eventData = parseEvent(ev);
+      const eventData = parseEventSourceMessage(ev);
       newEvents.push({
         time: (new Date()).toLocaleTimeString(),
         eventData,

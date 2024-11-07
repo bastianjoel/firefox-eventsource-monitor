@@ -26,7 +26,7 @@ body {
 
 .pane {
   color: #fff;
-  min-width: 200px;
+  min-width: 250px;
   flex-grow: 1;
 }
 
@@ -43,4 +43,52 @@ body {
   top: 0;
   left: 0;
   cursor: col-resize;
+}
+
+.tabs {
+  background-color: #f1f1f1;
+}
+
+.tabs button {
+  background-color: inherit;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 4px 6px;
+  transition: 0.3s;
+}
+
+.tabs button:hover {
+  background-color: #ddd;
+}
+
+.tabs button.active {
+  background-color: #ccc;
+}
+
+.tab-content {
+  display: none;
+  font-size: 14px;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+.tab-content table {
+  width: 100%;
+}
+
+.tab-content table thead tr {
+  background: #f1f1f1;
+  color: #000;
+}
+
+.tab-content table thead td {
+  padding: 2px 6px;
+}
+
+.tab-content table tbody {
+  font-size: 12px;
 }

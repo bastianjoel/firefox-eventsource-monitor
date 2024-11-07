@@ -11,11 +11,38 @@
     <div class="main-container pane-container">
       <div id="request-table" class="pane left"></div>
       <div id="detail" class="pane right" style="display: none">
-        <div id="data-table"></div>
+        <div class="tabs">
+          <button class="tab-links" data-tab="headers">Headers</button>
+          <button class="tab-links" data-tab="data-table">Events</button>
+          <!-- <button class="tab-links" data-tab="raw">Raw</button> -->
+        </div>
+        <div id="headers" class="tab-content active">
+          <table id="headers-info">
+            <thead>
+              <tr>
+                <td colspan="2">Info</td>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+          <table id="headers-response">
+            <thead>
+              <tr>
+                <td colspan="2">Response headers</td>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div id="data-table" class="tab-content"></div>
+        <div id="raw" class="tab-content"></div>
         <div class="gutter"></div>
       </div>
     </div>
     <script src="lib/resize.js"></script>
+    <script src="lib/table.js"></script>
+    <script src="lib/tabs.js"></script>
+    <script src="lib/util.js"></script>
     <script src="event-sources-list.js"></script>
   </body>
 </html>
